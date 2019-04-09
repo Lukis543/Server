@@ -27,80 +27,56 @@ namespace Servers
             Console.WriteLine("Connection established with the Consumer Main");
             producSocket = serverSocket.AcceptTcpClient();
             Console.WriteLine("Connection established with the Producer Main");
-            Thread client = new Thread(Client);
-            client.Start();
-            Thread produc = new Thread(Creat);
-            produc.Start();
 
-
-        }
-
-        static void Client()
-        {
-            ///loop
-            while ((true))
+            while (true)
             {
                 try
                 {
-                    TcpClient clientSocket = default(TcpClient);
-                    TcpClient producSocket = default(TcpClient);
                     NetworkStream clientStream = clientSocket.GetStream();
                     NetworkStream ProducStream = producSocket.GetStream();
-                    byte[] bytesFrom = new byte[102400];
+                   byte[] bytesFrom = new byte[102400];
                     if (clientStream.DataAvailable)
                     {
+                        new Thread(() =>
+                        {
 
-                        clientStream.Read(bytesFrom, 0, (int)clientSocket.ReceiveBufferSize);
-                        string dataFromClient = System.Text.Encoding.ASCII.GetString(bytesFrom);
-                        dataFromClient = dataFromClient.Substring(0, dataFromClient.IndexOf('\0'));
-                        Console.WriteLine("Data from client - " + dataFromClient);
-                        byte[] outStream = System.Text.Encoding.ASCII.GetBytes(dataFromClient);
-                        ProducStream.Write(outStream, 0, outStream.Length);
-                        ProducStream.Flush();
-                        clientStream.Flush();
+                            Console.WriteLine("\nClient Thread");
+                            int bytesRead = clientStream.Read(bytesFrom, 0, (int)clientSocket.ReceiveBufferSize);
+                            string dataFromClient = System.Text.Encoding.ASCII.GetString(bytesFrom, 0, bytesRead);
+                            byte[] outStream = System.Text.Encoding.ASCII.GetBytes(dataFromClient);
+                            ProducStream.Write(outStream, 0, outStream.Length);
+                            Console.WriteLine("Data from client - " + dataFromClient);
+                            Thread.Sleep(1000);
+                        }).Start();
+                        Console.WriteLine("\nThread off");
+                        
+
+
                     }
-
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
-                }
-
-            }
-        }
-
-        static void Creat()
-        {
-            while ((true))
-            {
-                try
-                {
-                    TcpClient clientSocket = default(TcpClient);
-                    TcpClient producSocket = default(TcpClient);
-                    NetworkStream clientStream = clientSocket.GetStream();
-                    NetworkStream ProducStream = producSocket.GetStream();
-                    byte[] bytesFrom = new byte[102400];
-                    if (ProducStream.DataAvailable)
+                    else if (ProducStream.DataAvailable)
                     {
+                        new Thread(() => 
+                        {
 
-                        ProducStream.Read(bytesFrom, 0, (int)clientSocket.ReceiveBufferSize);
-                        string dataFromProduc = System.Text.Encoding.ASCII.GetString(bytesFrom);
-                        dataFromProduc = dataFromProduc.Substring(0, dataFromProduc.IndexOf('\0'));
-                        Console.WriteLine("Data from production - " + dataFromProduc);
-                        byte[] outStream1 = System.Text.Encoding.ASCII.GetBytes(dataFromProduc);
-                        clientStream.Write(outStream1, 0, outStream1.Length);
-                        clientStream.Flush();
-                        ProducStream.Flush();
-
+                            Console.WriteLine("\nProduction Thread");
+                            int bytesread = ProducStream.Read(bytesFrom, 0, (int)clientSocket.ReceiveBufferSize);
+                            string dataFromProduc = System.Text.Encoding.ASCII.GetString(bytesFrom, 0, bytesread);;
+                            byte[] outStream1 = System.Text.Encoding.ASCII.GetBytes(dataFromProduc);
+                            clientStream.Write(outStream1, 0, outStream1.Length);
+                            Console.WriteLine("Data from production - " + dataFromProduc);
+                            Thread.Sleep(1000);
+                        }).Start();
+                        Console.WriteLine("\nThread off");
 
                     }
+
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.ToString());
                 }
-            }
 
+            }
         }
     }
 }
